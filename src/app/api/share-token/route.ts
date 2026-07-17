@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/options";
 import dbConnect from "@/lib/dbConnect";
 import { UserModel } from "@/model/User";
-import { generateShareToken } from "@/helpers/generateShareToken";
+import { generateToken } from "@/helpers/generateToken";
 
 export async function GET(request: Request) {
     await dbConnect();
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     }
 
     const userId = user._id;
-    const newShareToken = generateShareToken();
+    const newShareToken = generateToken();
 
     try {
         const updatedUser = await UserModel.findByIdAndUpdate(

@@ -6,10 +6,15 @@ import { Button } from "./ui/button";
 import { Moon, Sun, MessageCircleMore } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 const Navbar = () => {
     const { data: session } = useSession();
     const user = session?.user;
+
+    const pathName = usePathname();
+    const isHomePage = pathName === "/";
 
     const { theme, setTheme } = useTheme();
 
@@ -27,14 +32,15 @@ const Navbar = () => {
                     href="/"
                     className="group flex items-center gap-3 transition-all duration-300"
                 >
-                    <div className="relative flex size-10 items-center justify-center overflow-hidden rounded-full border border-zinc-300 bg-linear-to-br from-zinc-50 via-zinc-200 to-zinc-400 shadow-md transition-all duration-300 group-hover:shadow-xl dark:border-zinc-700 dark:from-zinc-700 dark:via-zinc-900 dark:to-black">
-                        <div className="absolute inset-0 bg-linear-to-tr from-white/50 via-transparent to-transparent dark:from-white/10" />
+                    <div className="relative flex size-10 items-center justify-center overflow-hidden transition-all duration-300 group-hover:shadow-xl">
 
-                        <div className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                            <div className="absolute inset-0 rounded-full bg-white/20 blur-md dark:bg-white/10" />
-                        </div>
-
-                        <MessageCircleMore className="relative size-5 text-zinc-800 dark:text-zinc-100" />
+                        <Image
+                            src="../icon.svg" // or /icon.svg
+                            alt="AnonymsG Logo"
+                            fill
+                            className="object-contain transition-transform duration-300 group-hover:scale-110"
+                            priority
+                        />
                     </div>
 
                     <div className="flex items-wbaseline">
@@ -50,32 +56,36 @@ const Navbar = () => {
 
                 {/* Desktop Links */}
                 <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-                    {session ? (<></>
+                    {session ? (
+                        <></>
                     ) : (
                         <>
                             <Link
-                                href="/"
+                                href="/#home"
                                 className="transition-colors hover:text-violet-500"
                             >
                                 Home
                             </Link>
 
-                            <a
-                                href="#features"
-                                className="transition-colors hover:text-violet-500"
-                            >
-                                Features
-                            </a>
+                            {isHomePage && (
+                                <>
+                                    <a
+                                        href="#demo"
+                                        className="transition-colors hover:text-violet-500"
+                                    >
+                                        Demo
+                                    </a>
 
-                            <a
-                                href="#demo"
-                                className="transition-colors hover:text-violet-500"
-                            >
-                                Demo
-                            </a>
+                                    <a
+                                        href="#get-started"
+                                        className="transition-colors hover:text-violet-500"
+                                    >
+                                        Get Started
+                                    </a>
+                                </>
+                            )}
                         </>
                     )}
-                    
                 </div>
                 {/* Right Side */}
                 <div className="flex items-center gap-3">
@@ -120,6 +130,6 @@ const Navbar = () => {
             </div>
         </nav>
     );
-}
+};
 
 export default Navbar;

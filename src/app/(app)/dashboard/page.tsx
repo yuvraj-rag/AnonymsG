@@ -1,11 +1,11 @@
 "use client";
 
-import MessageCard from "@/app/(app)/dashboard/MessageCard";
+import ConversationCard from "@/app/(app)/dashboard/ConversationCard";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import UnauthenticatedView from "@/components/UnauthenticatedView";
-import { Message } from "@/model/User";
+import { Message } from "@/model/Conversation";
 import { acceptMessageSchema } from "@/schemas/acceptMessageSchema";
 import { ApiResponse } from "@/types/ApiResponse";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,16 +15,31 @@ import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import ConversationThread from "./ConversationThread";
+import { useRouter, useSearchParams } from "next/navigation";
+
+export type ConversationSummary = {
+    _id: string;
+    conversationToken: string;
+    status: "open" | "closed";
+    recipientHasUnread: boolean;
+    lastActivityAt: Date;
+    lastMessage: Message;
+};
 
 const Dashboard = () => {
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [conversations, setConversations] = useState<ConversationSummary[]>(
+        [],
+    );
     const [isLoading, setIsLoading] = useState(false);
     const [isSwitchLoading, setIsSwitchLoading] = useState(false);
     const [profileUrl, setProfileUrl] = useState(``);
 
-    const handleDeleteMessage = (messageId: string) => {
-        setMessages(messages.filter((msg) => String(msg._id) !== messageId));
-    };
+    const [activeConversation, setActiveConversation] = useState<string | null>(
+        null,
+    );
+
+    const router = useRouter();
 
     const { data: session } = useSession();
 
@@ -36,11 +51,9 @@ const Dashboard = () => {
     });
 
     //destructure important stuff from react-hook-form
-    const { watch, setValue } = form;
+    const { setValue } = form;
     //these help in properly syncing UI side and backend side without issues
     //like instant toggle from UI and taking time for backend to register it
-
-    const acceptMessages = watch("acceptMessages");
 
     const fetchAcceptMessage = useCallback(async () => {
         setIsSwitchLoading(true);
@@ -60,34 +73,31 @@ const Dashboard = () => {
     }, [setValue]);
 
     const fetchLink = useCallback(async () => {
-    try {
-        const response = await axios.get(
-            "/api/share-token"
-        );
+        try {
+            const response = await axios.get("/api/share-token");
 
-        setProfileUrl(
-            `${window.location.origin}/s/${response.data.shareToken}`
-        );
+            setProfileUrl(
+                `${window.location.origin}/s/${response.data.shareToken}`,
+            );
+        } catch (error) {
+            const axiosError = error as AxiosError<ApiResponse>;
 
-    } catch (error) {
-        const axiosError = error as AxiosError<ApiResponse>;
+            toast.error("Error", {
+                description: axiosError.response?.data.message,
+            });
+        }
+    }, []);
 
-        toast.error("Error", {
-            description: axiosError.response?.data.message,
-        });
-    }
-}, []);
-
-    const fetchMessages = useCallback(
+    const fetchConversations = useCallback(
         async (refresh: boolean = false) => {
             setIsLoading(true);
             setIsSwitchLoading(true);
             try {
-                const response = await axios.get("/api/get-messages");
-                setMessages(response.data.messages || []);
+                const response = await axios.get("/api/conversations");
+                setConversations(response.data.conversations || []);
                 if (refresh) {
                     toast("Refreshed", {
-                        description: "showing latest messages",
+                        description: "Showing latest messages",
                     });
                 }
             } catch (error) {
@@ -100,8 +110,21 @@ const Dashboard = () => {
                 setIsSwitchLoading(false);
             }
         },
-        [setIsLoading, setMessages],
+        [setIsLoading, setConversations],
     );
+
+    const openConversation = (token: string) => {
+        setActiveConversation(token);
+
+        router.push(`/dashboard?conversation=${token}`, { scroll: false });
+    };
+    const closeConversation = () => {
+        setActiveConversation(null);
+
+        router.push("/dashboard", {
+            scroll: false,
+        });
+    };
 
     const generateNewLink = async () => {
         setIsLoading(true);
@@ -109,7 +132,7 @@ const Dashboard = () => {
             await axios.post("/api/share-token");
             await fetchLink();
 
-            toast.success("New link generated")
+            toast.success("New link generated");
         } catch (error) {
             const axiosError = error as AxiosError<ApiResponse>;
             toast.error("Error", {
@@ -125,10 +148,21 @@ const Dashboard = () => {
             return;
         }
 
-        fetchMessages();
+        fetchConversations();
         fetchAcceptMessage();
         fetchLink();
-    }, [session, fetchAcceptMessage, fetchMessages, fetchLink]);
+    }, [session, fetchAcceptMessage, fetchConversations, fetchLink]);
+
+    const searchParams = useSearchParams();
+
+    //check if conversation was open before reload. reopen it.
+    useEffect(() => {
+        const token = searchParams.get("conversation");
+
+        if (token) {
+            setActiveConversation(token);
+        }
+    }, [searchParams]);
 
     if (!session || !session.user) {
         //double check for unauthennticated users
@@ -241,7 +275,7 @@ const Dashboard = () => {
                         variant="outline"
                         onClick={(e) => {
                             e.preventDefault();
-                            fetchMessages(true);
+                            fetchConversations(true);
                         }}
                     >
                         {isLoading ? (
@@ -254,21 +288,34 @@ const Dashboard = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {messages.length > 0 ? (
-                        messages.map((message) => (
-                            <MessageCard
-                                key={String(message._id)}
-                                message={message}
-                                onMessageDelete={handleDeleteMessage}
+                    {conversations.length > 0 ? (
+                        conversations.map((conversation) => (
+                            <ConversationCard
+                                key={conversation.conversationToken}
+                                conversation={conversation}
+                                onClick={() =>
+                                    openConversation(
+                                        conversation.conversationToken,
+                                    )
+                                }
                             />
                         ))
                     ) : (
                         <div className="rounded-xl border p-8 text-center text-muted-foreground">
-                            No messages to display.
+                            No conversations to display.
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Conversation Thread overlay */}
+            {activeConversation && (
+                <ConversationThread
+                    conversationToken={activeConversation}
+                    onClose={() => closeConversation()}
+                    refreshConversations={fetchConversations}
+                />
+            )}
         </div>
     );
 };

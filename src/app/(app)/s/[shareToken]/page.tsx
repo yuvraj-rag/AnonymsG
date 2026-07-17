@@ -4,7 +4,8 @@
 import { notFound } from "next/navigation";
 import dbConnect from "@/lib/dbConnect";
 import { UserModel } from "@/model/User";
-import SendMessageForm from "./SendMessageForm";
+import SenderPageClient from "./SenderPageClient";
+import { Recipient } from "./types";
 
 export default async function page({ params }: 
     {params: Promise<{ shareToken: string }>}
@@ -19,9 +20,11 @@ export default async function page({ params }:
         notFound();
     }
 
-    if(!user.isAcceptingMessages) {
-        return <div>{user.username} is not accepting messages as of now. Please try later.</div>
+    const recipient: Recipient = {
+        username: user.username,
+        isAcceptingMessages: user.isAcceptingMessages,
+        shareToken: shareToken
     }
 
-    return <SendMessageForm username={user.username} shareToken={shareToken}/>;
+    return <SenderPageClient recipient={recipient}/>;
 }

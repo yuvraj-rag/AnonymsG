@@ -1,15 +1,21 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Sparkles, ArrowRight, User, Send, Loader2, Mail } from "lucide-react";
+import { User, Send, Loader2, Mail, Lock } from "lucide-react";
 
-type DemoMessage = {
-    id: string | number;
+/* ------------------------------------------------------------------ */
+/* Types & Constants                                                  */
+/* ------------------------------------------------------------------ */
+
+type Message = {
+    id: string;
     content: string;
-    isNew?: boolean;
+    createdAt: number;
+    isNew: boolean;
+    hidden: boolean;
 };
 
 const CATEGORY_MESSAGES = {
@@ -20,258 +26,123 @@ const CATEGORY_MESSAGES = {
     Random: "If animals could talk, which would be the rudest?",
 } as const;
 
-type CategoryMessages = typeof CATEGORY_MESSAGES;
-
-const DEMO_USERS = [
-    "alex_writes",
-    "jordan",
-    "sarahDev",
-    "nightowl",
-    "creative_mind",
-    "Antman"
+const HIDDEN_MESSAGES = [
+    "I've been thinking about you all day.",
+    "You're really cute when you smile.",
+    "If I told you, it wouldn't be anonymous.",
+    "Let's keep this between us.",
+    "You make my day better.",
+    "I noticed you today.",
+    "Wish I had the courage to say this in person.",
+    "You're the reason I check my phone.",
 ];
 
-const FLY_DELAY = 900;
-const FLY_HIDE = 800;
-const BADGE_HIDE = 1800;
-const INTERVAL_MS = 2000;
+const MAX_CHARS = 300;
+const MAX_CLOUD_MESSAGES = 5;
 
-const HomeDemo = () => {
-    const [message, setMessage] = useState("");
-    const [messages, setMessages] =
-        useState<DemoMessage[]>([]);
+const HIGHLIGHT_DURATION = 1000;
+const GLOW_DURATION = 1000;
+const USER_SEND_TRAVEL = 1200;
+const CLOUD_DROP_TRAVEL = 1200;
+const CLOUD_LOOP_MIN = 6000;
+const CLOUD_LOOP_MAX = 9000;
+const CLOUD_INITIAL_DELAY = 3000;
+const CARD_HEIGHT = 480;
+const TOP_STRIP_HEIGHT = 80;
+const RELATIVE_TIME_TICK = 30000;
 
-    const [isSending, setIsSending] = useState(false);
-    const [showSuggestions, setShowSuggestions] = useState(false);
+const generateId = () =>
+    crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
 
-    const [receiverGlow, setReceiverGlow] = useState(false);
-    const [showIncomingBadge, setShowIncomingBadge] = useState(false);
-    const [showFlyingMessage, setShowFlyingMessage] = useState(false);
-    const [receiverIndex, setReceiverIndex] = useState(0);
-
-    // Refs to store timer/interval IDs so we can clear them on unmount
-    const intervalRef = useRef<number | null>(null);
-    const timersRef = useRef<{ flying?: number; badge?: number; glow?: number }>({});
-
-    useEffect(() => {
-        const id = window.setInterval(() => {
-            setReceiverIndex((prev) => (prev + 1) % DEMO_USERS.length);
-        }, INTERVAL_MS);
-
-        intervalRef.current = id;
-
-        return () => {
-            if (intervalRef.current) window.clearInterval(intervalRef.current);
-            const t = timersRef.current;
-            if (t.flying) window.clearTimeout(t.flying);
-            if (t.badge) window.clearTimeout(t.badge);
-            if (t.glow) window.clearTimeout(t.glow);
-        };
-    }, []);
-
-    const receiverName = DEMO_USERS[receiverIndex];
-
-    const handleSend = useCallback(async () => {
-        if (!message.trim()) return;
-        setIsSending(true);
-        setShowFlyingMessage(false);
-
-        requestAnimationFrame(() => {
-            setShowFlyingMessage(true);
-        });
-        try {
-            await new Promise((resolve) => setTimeout(resolve, FLY_DELAY));
-
-            setReceiverGlow(true);
-            setShowIncomingBadge(true);
-
-            const newMessage: DemoMessage = {
-                id: crypto.randomUUID(),
-                content: message,
-                isNew: true,
-            };
-
-            setMessages((prev) => [newMessage, ...prev].slice(0, 10));
-
-            setMessage("");
-            setShowSuggestions(true);
-
-            // schedule clear timers and store their IDs so we can clear on unmount
-            if (timersRef.current.flying)
-                window.clearTimeout(timersRef.current.flying);
-            timersRef.current.flying = window.setTimeout(
-                () => setShowFlyingMessage(false),
-                FLY_HIDE,
-            );
-
-            if (timersRef.current.badge)
-                window.clearTimeout(timersRef.current.badge);
-            timersRef.current.badge = window.setTimeout(
-                () => setShowIncomingBadge(false),
-                BADGE_HIDE,
-            );
-
-            if (timersRef.current.glow)
-                window.clearTimeout(timersRef.current.glow);
-            timersRef.current.glow = window.setTimeout(
-                () => setReceiverGlow(false),
-                BADGE_HIDE,
-            );
-        } finally {
-            setIsSending(false);
-        }
-    }, [message]);
-
-
-    return (
-        <section
-            id="demo"
-            className="relative overflow-hidden py-24"
-            role="region"
-            aria-label="Live demo of anonymous messaging"
-        >
-            {/* Background */}
-            <div className="absolute inset-0 -z-10 overflow-hidden">
-                <div className="absolute inset-s-1/2 top-0 size-112 -translate-x-1/2 rounded-full bg-violet-500/8 blur-3xl" />
-
-                <div className="absolute inset-e-0 top-1/3 size-80 rounded-full bg-violet-500/5 blur-3xl" />
-
-                <div className="absolute inset-s-0 bottom-0 size-80 rounded-full bg-violet-500/5 blur-3xl" />
-            </div>
-
-            <div className="container mx-auto px-6">
-                {/* Header */}
-                <div className="mx-auto mb-14 flex max-w-3xl flex-col items-center text-center">
-                    <div className="mb-5 inline-flex items-center gap-2 rounded-full border bg-background/70 px-5 py-2 text-sm font-medium backdrop-blur">
-                        <Sparkles className="size-4 text-violet-500" />
-                        Live Interactive Sandbox
-                    </div>
-
-                    <h2 className="text-4xl font-black tracking-tight sm:text-5xl">
-                        Watch How
-                        <span className="bg-linear-to-r from-foreground via-violet-500 to-foreground bg-clip-text text-transparent">
-                            {" "}
-                            Anonymous{" "}
-                        </span>
-                        Messages Are Sent
-                    </h2>
-
-                    <p className="mt-5 max-w-2xl text-lg text-muted-foreground">
-                        Type a message on the left and watch it instantly appear
-                        in the recipient's inbox.
-                    </p>
-                </div>
-
-                {/* Sandbox */}
-                <Card className="mx-auto max-w-6xl rounded-3xl border bg-background/70 p-4 backdrop-blur-xl md:p-6">
-                    <div className="rounded-3xl border-2 border-dashed border-border/70 p-4 md:p-8">
-                        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <h3 className="text-lg font-semibold">
-                                    Sandbox
-                                </h3>
-
-                                <p className="text-sm text-muted-foreground">
-                                    Receiver shares the link with senders (can
-                                    be multiple)
-                                </p>
-                            </div>
-
-                            <div className="rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground">
-                                No Account Required
-                            </div>
-                        </div>
-
-                        <div className="relative grid gap-8 lg:grid-cols-2">
-                            {/* Animated Connector */}
-                            <div className="pointer-events-none absolute inset-y-1/2 inset-s-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:flex items-center justify-center gap-2">
-                                <div className="h-px w-10 bg-border" />
-                                <ArrowRight className="size-4 text-violet-500" />
-                                <div className="h-px w-10 bg-border" />
-                            </div>
-
-                            {/* Flying Message */}
-                            {showFlyingMessage && (
-                                <div className="pointer-events-none absolute inset-0 hidden lg:flex items-center justify-center">
-                                    <div className="animate-[flyMessage_0.9s_ease-in-out_forwards] rounded-full border border-violet-500/30 bg-linear-to-r from-violet-500/20 via-violet-500/30 to-violet-500/20 p-3 shadow-[0_0_30px_rgba(139,92,246,0.35)] backdrop-blur">
-                                        <Mail className="size-5 text-violet-500" />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Sender Card */}
-                            <SenderCard
-                                message={message}
-                                setMessage={setMessage}
-                                isSending={isSending}
-                                handleSend={handleSend}
-                                showSuggestions={showSuggestions}
-                                categoryMessages={CATEGORY_MESSAGES}
-                            />
-
-                            {/* Receiver Card */}
-                            <ReceiverCard
-                                receiverName={receiverName}
-                                receiverGlow={receiverGlow}
-                                showIncomingBadge={showIncomingBadge}
-                                messages={messages}
-                            />
-                        </div>
-                    </div>
-                </Card>
-            </div>
-        </section>
-    );
+const formatRelative = (now: number, createdAt: number) => {
+    const seconds = Math.floor((now - createdAt) / 1000);
+    if (seconds < 10) return "Just now";
+    if (seconds < 60) return `${seconds}s ago`;
+    return `${Math.floor(seconds / 60)}m ago`;
 };
 
-    function SenderCard({ message, setMessage, isSending, handleSend, showSuggestions, categoryMessages, }: {
-        message: string;
-        setMessage: (s: string) => void;
-        isSending: boolean;
-        handleSend: () => Promise<void> | void;
-        showSuggestions: boolean;
-            categoryMessages: CategoryMessages;
-    }) {
-        return (
-            <div className="rounded-3xl border bg-background/60 p-5 shadow-sm">
-                <div className="mb-5 flex items-center gap-3 border-b pb-4">
+/* ------------------------------------------------------------------ */
+/* Hooks                                                              */
+/* ------------------------------------------------------------------ */
+
+function useNow() {
+    const [now, setNow] = useState(Date.now());
+
+    useEffect(() => {
+        const timer = setInterval(() => setNow(Date.now()), RELATIVE_TIME_TICK);
+        return () => clearInterval(timer);
+    }, []);
+
+    return now;
+}
+
+/* ------------------------------------------------------------------ */
+/* SenderCard                                                         */
+/* ------------------------------------------------------------------ */
+
+function SenderCard({
+    message,
+    setMessage,
+    isSending,
+    onSend,
+    showSuggestions,
+}: {
+    message: string;
+    setMessage: (value: string) => void;
+    isSending: boolean;
+    onSend: () => void;
+    showSuggestions: boolean;
+}) {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            onSend();
+        }
+    };
+
+    return (
+        <div
+            style={{ height: CARD_HEIGHT }}
+            className="flex flex-col rounded-3xl border bg-background/60 p-5 shadow-sm"
+        >
+            <div className="mb-5 flex shrink-0 items-center justify-between border-b pb-4">
+                <div className="flex items-center gap-3">
                     <div className="flex size-12 items-center justify-center rounded-full border">
                         <User className="size-5" />
                     </div>
-
                     <div>
                         <h4 className="font-semibold">You</h4>
-
-                        <p className="text-sm text-muted-foreground">Anonymous Sender</p>
+                        <p className="text-sm text-muted-foreground">
+                            Anonymous sender
+                        </p>
                     </div>
                 </div>
 
+                <div className="rounded-full border bg-background/70 px-3 py-1 text-xs text-muted-foreground">
+                    No account required
+                </div>
+            </div>
+
+            <div className="flex min-h-0 flex-1 flex-col">
                 <Textarea
-                    id="demo-message"
                     value={message}
-                    onChange={(e) => setMessage(e.target.value.slice(0, 300))}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                            e.preventDefault();
-                            handleSend();
-                        }
-                    }}
+                    onChange={(e) =>
+                        setMessage(e.target.value.slice(0, MAX_CHARS))
+                    }
+                    onKeyDown={handleKeyDown}
                     placeholder="Type an anonymous message..."
-                    className="min-h-40 resize-none"
-                    maxLength={300}
-                    aria-label="Type an anonymous message"
-                    aria-describedby="demo-message-counter"
+                    className="min-h-32 flex-1 resize-none"
+                    maxLength={MAX_CHARS}
                 />
 
-                <div id="demo-message-counter" className="mt-2 text-right text-xs text-muted-foreground">
-                    {message.length}/300
+                <div className="mt-2 text-right text-xs text-muted-foreground">
+                    {message.length}/{MAX_CHARS}
                 </div>
 
-                    <Button
-                        onClick={handleSend}
+                <Button
+                    onClick={onSend}
                     disabled={isSending || !message.trim()}
-                    className="mt-4 w-full cursor-pointer transition-all duration-500 hover:-translate-y-1 hover:shadow-xl"
-                    aria-label="Send anonymously"
+                    className="mt-4 w-full transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                 >
                     {isSending ? (
                         <>
@@ -281,115 +152,480 @@ const HomeDemo = () => {
                     ) : (
                         <>
                             <Send className="mr-2 size-4" />
-                            Send Anonymously
+                            Send anonymously
                         </>
                     )}
                 </Button>
 
                 {showSuggestions && (
-                    <div className="mt-6 animate-in slide-in-from-bottom-2 fade-in duration-500">
-                        <p className="mb-3 text-sm text-muted-foreground">Need inspiration?</p>
-
+                    <div className="mt-6 overflow-y-auto">
+                        <p className="mb-3 text-sm text-muted-foreground">
+                            Need inspiration?
+                        </p>
                         <div className="flex flex-wrap gap-2">
-                            {Object.entries(categoryMessages).map(([category, value]) => (
-                                <button
-                                    key={category}
-                                    type="button"
-                                    onClick={() => setMessage(value)}
-                                    className="cursor-pointer rounded-full border px-3 py-1 text-xs transition-all hover:bg-accent hover:shadow-sm"
-                                >
-                                    {category}
-                                </button>
-                            ))}
+                            {Object.entries(CATEGORY_MESSAGES).map(
+                                ([category, value]) => (
+                                    <button
+                                        key={category}
+                                        type="button"
+                                        onClick={() => setMessage(value)}
+                                        className="rounded-full border px-3 py-1 text-xs transition-colors hover:bg-accent"
+                                    >
+                                        {category}
+                                    </button>
+                                ),
+                            )}
                         </div>
                     </div>
                 )}
             </div>
-        );
-    }
+        </div>
+    );
+}
 
-    function ReceiverCard({ receiverName, receiverGlow, showIncomingBadge, messages, }: {
-        receiverName: string;
-        receiverGlow: boolean;
-        showIncomingBadge: boolean;
-        messages: { id: string | number; content: string; isNew?: boolean }[];
-    }) {
-        return (
-            <div
-                className={`rounded-3xl border bg-background/60 p-5 shadow-sm transition-all duration-700 ${
-                    receiverGlow ? "border-violet-500/40 scale-[1.01]" : ""
-                }`}
-                role="region"
-                aria-label="Receiver inbox preview"
-            >
-                <div className="mb-5 flex items-center justify-between border-b pb-4">
-                    <div className="flex items-center gap-3">
+/* ------------------------------------------------------------------ */
+/* CloudSenders                                                       */
+/* ------------------------------------------------------------------ */
+
+function CloudSenders({ activeSender }: { activeSender: number | null }) {
+    const positions = ["translate-y-1", "-translate-y-3", "translate-y-1"];
+
+    return (
+        <div className="relative z-20 flex h-full w-full items-end justify-center gap-6 overflow-visible">
+            {positions.map((position, index) => {
+                const isActive = activeSender === index;
+
+                return (
+                    <div
+                        key={index}
+                        className={`relative flex flex-col items-center transition-all duration-500 ${position}`}
+                    >
                         <div
-                            className={`relative flex size-12 items-center justify-center rounded-full border transition-all duration-700 ${receiverGlow ? "border-violet-500 shadow-[0_0_30px_rgba(139,92,246,0.35)]" : ""}`}
+                            className={`flex size-10 items-center justify-center rounded-full border bg-background shadow-sm transition-all duration-300 ${
+                                isActive
+                                    ? "scale-110 border-violet-500 ring-2 ring-violet-500/40"
+                                    : ""
+                            }`}
                         >
-                            <Mail className="size-5" />
+                            <User className="size-4" />
                         </div>
 
-                        <div>
-                            <h4 className="font-semibold">{receiverName}</h4>
-
-                            <p className="text-sm text-muted-foreground">
-                                Receiver
-                            </p>
-                        </div>
+                        {isActive && (
+                            <div className="absolute top-full left-1/2 z-30 -translate-x-1/2 animate-[cloudDrop_1.2s_ease-in_forwards]">
+                                <FloatingMailOrb />
+                            </div>
+                        )}
                     </div>
+                );
+            })}
+        </div>
+    );
+}
 
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <div className="relative" aria-hidden={!receiverGlow}>
-                            <div className="size-2 rounded-full bg-green-500" />
+function FloatingMailOrb() {
+    return (
+        <div className="flex size-9 items-center justify-center rounded-full bg-violet-500 shadow-[0_0_20px_6px_rgba(139,92,246,0.45)]">
+            <Mail className="size-4 text-white" />
+        </div>
+    );
+}
 
-                            {receiverGlow && (
-                                <div className="absolute inset-0 animate-ping rounded-full bg-green-500" />
-                            )}
-                        </div>
-                        <span className="sr-only">Accepting messages</span>
-                        <span aria-hidden>Accepting Messages</span>
+/* ------------------------------------------------------------------ */
+/* ReceiverPanel                                                      */
+/* ------------------------------------------------------------------ */
+
+function ReceiverPanel({
+    messages,
+    glow,
+    showBadge,
+    now,
+    listRef,
+    mobile = false,
+}: {
+    messages: Message[];
+    glow: boolean;
+    showBadge: boolean;
+    now: number;
+    listRef: React.RefObject<HTMLDivElement | null>;
+    mobile?: boolean;
+}) {
+    return (
+        <div
+            style={mobile ? { minHeight: 320 } : { height: CARD_HEIGHT }}
+            className={`flex flex-col rounded-3xl border bg-background/60 p-5 shadow-sm transition-all duration-500 ${
+                glow ? "scale-[1.01] border-violet-500/40" : ""
+            }`}
+        >
+            <div className="mb-4 flex shrink-0 items-center justify-between border-b pb-4">
+                <div className="flex items-center gap-3">
+                    <div
+                        className={`flex size-12 items-center justify-center rounded-full border transition-all duration-500 ${
+                            glow
+                                ? "border-violet-500 shadow-[0_0_25px_rgba(139,92,246,0.35)]"
+                                : ""
+                        }`}
+                    >
+                        <Mail className="size-5" />
+                    </div>
+                    <div>
+                        <h4 className="font-semibold">Someone</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Receiver
+                        </p>
                     </div>
                 </div>
 
-                {showIncomingBadge && (
-                    <div className="mb-4 animate-in slide-in-from-top-2 fade-in duration-300">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="relative">
+                        <div className="size-2 rounded-full bg-green-500" />
+                        {glow && (
+                            <div className="absolute inset-0 animate-ping rounded-full bg-green-500" />
+                        )}
+                    </div>
+                    Accepting
+                </div>
+            </div>
+
+            <div className="mb-4 h-6 shrink-0">
+                {showBadge && (
+                    <div className="animate-in fade-in slide-in-from-top-2">
                         <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs text-violet-500">
-                            ✨ New Message Received
-                        </div>
-                        <div className="sr-only" aria-live="polite">
                             New message received
                         </div>
                     </div>
                 )}
+            </div>
 
-                <div className="max-h-[420px] overflow-y-auto space-y-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none">
-                    {!messages.length && (
-                        <p className="text-sm text-muted-foreground">
-                            No messages yet.
-                        </p>
-                    )}
-                    {messages.map((msg) => (
-                        <div
-                            key={msg.id}
-                            className={`rounded-2xl border bg-background/80 p-4 transition-all duration-700 ${msg.isNew ? "animate-in slide-in-from-top-3 fade-in shadow-[0_0_25px_rgba(139,92,246,0.18)]" : ""}`}
+            <div
+                ref={listRef}
+                className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1"
+            >
+                {messages.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                        No messages yet.
+                    </p>
+                )}
+
+                {messages.map((msg) => (
+                    <div
+                        key={msg.id}
+                        className={`rounded-2xl border bg-background/80 p-4 transition-all duration-500 ${
+                            msg.isNew
+                                ? "animate-in fade-in slide-in-from-top-3 shadow-[0_0_25px_rgba(139,92,246,0.18)]"
+                                : ""
+                        } ${!msg.hidden ? "border-l-2 border-l-violet-500/50" : ""}`}
+                    >
+                        <div className="mb-2 flex items-center justify-between border-b pb-2">
+                            <p className="flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                {msg.hidden ? (
+                                    <>
+                                        <Lock className="size-3" />
+                                        Anonymous
+                                    </>
+                                ) : (
+                                    "You sent"
+                                )}
+                            </p>
+                            <span className="text-[10px] text-muted-foreground">
+                                {formatRelative(now, msg.createdAt)}
+                            </span>
+                        </div>
+
+                        <p
+                            className={
+                                msg.hidden ? "select-none blur-sm" : ""
+                            }
                         >
-                            <div className="mb-2 border-b pb-2">
-                                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                                    Anonymous Message
-                                </p>
+                            {msg.content}
+                        </p>
+
+                        {msg.hidden && (
+                            <p className="mt-2 text-xs text-muted-foreground">
+                                From another sender
+                            </p>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/* ------------------------------------------------------------------ */
+/* HomeDemo                                                            */
+/* ------------------------------------------------------------------ */
+
+const HomeDemo = () => {
+    const now = useNow();
+
+    const [message, setMessage] = useState("");
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [isSending, setIsSending] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
+    const [glow, setGlow] = useState(false);
+    const [showBadge, setShowBadge] = useState(false);
+    const [flyingMessage, setFlyingMessage] = useState(false);
+    const [activeCloudSender, setActiveCloudSender] = useState<number | null>(
+        null,
+    );
+
+    const hasStartedCloudLoop = useRef(false);
+    const cloudTimer = useRef<number | null>(null);
+    const listRef = useRef<HTMLDivElement | null>(null);
+    const cloudMessageCount = useRef(0);
+
+    const flashReceiver = () => {
+        setGlow(true);
+        setShowBadge(true);
+
+        window.setTimeout(() => {
+            setGlow(false);
+            setShowBadge(false);
+        }, GLOW_DURATION);
+    };
+
+    const clearHighlight = (id: string) => {
+        window.setTimeout(() => {
+            setMessages((prev) =>
+                prev.map((m) => (m.id === id ? { ...m, isNew: false } : m)),
+            );
+        }, HIGHLIGHT_DURATION);
+    };
+
+    const spawnCloudMessage = () => {
+        if (cloudMessageCount.current >= MAX_CLOUD_MESSAGES) return;
+
+        const sender = Math.floor(Math.random() * 3);
+        setActiveCloudSender(sender);
+
+        window.setTimeout(() => {
+            const id = generateId();
+            cloudMessageCount.current += 1;
+
+            setMessages((prev) => [
+                {
+                    id,
+                    content:
+                        HIDDEN_MESSAGES[
+                            Math.floor(Math.random() * HIDDEN_MESSAGES.length)
+                        ],
+                    createdAt: Date.now(),
+                    hidden: true,
+                    isNew: true,
+                },
+                ...prev,
+            ]);
+
+            flashReceiver();
+            clearHighlight(id);
+            setActiveCloudSender(null);
+        }, CLOUD_DROP_TRAVEL);
+    };
+
+    const startCloudLoop = () => {
+        if (hasStartedCloudLoop.current) return;
+        hasStartedCloudLoop.current = true;
+
+        const loop = () => {
+            if (cloudMessageCount.current < MAX_CLOUD_MESSAGES) {
+                spawnCloudMessage();
+                const delay =
+                    CLOUD_LOOP_MIN +
+                    Math.random() * (CLOUD_LOOP_MAX - CLOUD_LOOP_MIN);
+                cloudTimer.current = window.setTimeout(loop, delay);
+            }
+        };
+
+        cloudTimer.current = window.setTimeout(loop, CLOUD_INITIAL_DELAY);
+    };
+
+    const handleSend = () => {
+        if (!message.trim() || isSending) return;
+
+        setIsSending(true);
+        setFlyingMessage(true);
+
+        window.setTimeout(() => {
+            const id = generateId();
+
+            setMessages((prev) => [
+                {
+                    id,
+                    content: message,
+                    createdAt: Date.now(),
+                    hidden: false,
+                    isNew: true,
+                },
+                ...prev,
+            ]);
+
+            flashReceiver();
+            clearHighlight(id);
+
+            setMessage("");
+            setShowSuggestions(true);
+            setFlyingMessage(false);
+            setIsSending(false);
+
+            startCloudLoop();
+        }, USER_SEND_TRAVEL);
+    };
+
+    useEffect(() => {
+        listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    }, [messages.length]);
+
+    useEffect(() => {
+        return () => {
+            if (cloudTimer.current) clearTimeout(cloudTimer.current);
+        };
+    }, []);
+
+    return (
+        <section id="demo" className="relative overflow-hidden my-18">
+            <div className="container mx-auto px-6">
+                <div className="mx-auto mb-14 text-center">
+                    <h2 className="text-4xl font-black">
+                        Watch how
+                        <span className="text-violet-500"> anonymous </span>
+                        messages are sent
+                    </h2>
+                </div>
+
+                <Card className="mx-auto max-w-6xl overflow-visible rounded-3xl p-4 backdrop-blur-xl">
+                    {/* ── DESKTOP layout (lg+) ── */}
+                    <div className="hidden lg:block">
+                        {/* Row 1: full-width top strip */}
+                        <div
+                            style={{ height: TOP_STRIP_HEIGHT }}
+                            className="grid grid-cols-2 gap-8 overflow-visible"
+                        >
+                            <div className="flex items-center px-1">
+                                <div>
+                                    <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                                        Demo
+                                    </p>
+                                    <h3 className="text-xl font-bold">
+                                        Try it yourself
+                                    </h3>
+                                </div>
                             </div>
 
-                            <p className="leading-relaxed">{msg.content}</p>
-
-                            <p className="mt-3 text-xs text-muted-foreground">
-                                Just now
-                            </p>
+                            <div className="overflow-visible">
+                                <CloudSenders
+                                    activeSender={activeCloudSender}
+                                />
+                            </div>
                         </div>
-                    ))}
-                </div>
-            </div>
-        );
-    }
 
-    export default HomeDemo;
+                        {/* Row 2: two equal cards */}
+                        <div className="relative grid grid-cols-2 gap-8">
+                            {flyingMessage && (
+                                <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+                                    <div className="animate-[flyMessage_1.2s_ease-in-out]">
+                                        <FloatingMailOrb />
+                                    </div>
+                                </div>
+                            )}
+
+                            <SenderCard
+                                message={message}
+                                setMessage={setMessage}
+                                isSending={isSending}
+                                onSend={handleSend}
+                                showSuggestions={showSuggestions}
+                            />
+
+                            <ReceiverPanel
+                                messages={messages}
+                                glow={glow}
+                                showBadge={showBadge}
+                                now={now}
+                                listRef={listRef}
+                            />
+                        </div>
+                    </div>
+
+                    {/* ── MOBILE layout (below lg) ── */}
+                    <div className="flex flex-col gap-4 lg:hidden">
+                        {/* Cloud senders centered above receiver */}
+                        <div className="overflow-visible">
+                            <CloudSenders activeSender={activeCloudSender} />
+                        </div>
+
+                        {/* Receiver card */}
+                        <ReceiverPanel
+                            messages={messages}
+                            glow={glow}
+                            showBadge={showBadge}
+                            now={now}
+                            listRef={listRef}
+                            mobile
+                        />
+
+                        {/* Flying message travels upward on mobile */}
+                        <div className="relative">
+                            {flyingMessage && (
+                                <div className="pointer-events-none absolute inset-x-0 -top-4 z-20 flex justify-center">
+                                    <div className="animate-[flyMessageUp_1.2s_ease-in-out]">
+                                        <FloatingMailOrb />
+                                    </div>
+                                </div>
+                            )}
+
+                            <SenderCard
+                                message={message}
+                                setMessage={setMessage}
+                                isSending={isSending}
+                                onSend={handleSend}
+                                showSuggestions={showSuggestions}
+                            />
+                        </div>
+                    </div>
+                </Card>
+            </div>
+
+            <style jsx>{`
+                @keyframes flyMessage {
+                    from {
+                        opacity: 0;
+                        transform: translateX(-120px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateX(120px);
+                    }
+                }
+                @keyframes flyMessageUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(0px);
+                    }
+                    40% {
+                        opacity: 1;
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateY(-120px);
+                    }
+                }
+                @keyframes cloudDrop {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                    }
+                    20% {
+                        opacity: 1;
+                    }
+                    to {
+                        opacity: 0;
+                        transform: translateY(60px);
+                    }
+                }
+            `}</style>
+        </section>
+    );
+};
+
+export default HomeDemo;

@@ -12,11 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Recipient } from "./types";
+import { useRouter } from "next/navigation";
 
 const DEFAULT_SUGGESTIONS = [
     "What's a small thing that instantly improves your day?",
     "If you could master any skill overnight, what would it be?",
-    "What's something most people should try at least once?"
+    "What's something most people should try at least once?",
 ];
 
 const QUESTION_CATEGORIES = [
@@ -27,14 +29,17 @@ const QUESTION_CATEGORIES = [
     "spicy",
 ] as const;
 
-
-const SendMessageForm = ({ username, shareToken }: { username: string, shareToken: string }) => {
-    const receivingUser = username;
-    const receivingUserShareToken = shareToken;
+const SendMessageForm = ({ recipient }: { recipient: Recipient }) => {
+    const receivingUser = recipient.username;
+    const receivingUserShareToken = recipient.shareToken;
     const [isSending, setIsSending] = useState(false);
-    const [suggestions, setSuggestions] = useState<string[]>(DEFAULT_SUGGESTIONS);
+    const [suggestions, setSuggestions] =
+        useState<string[]>(DEFAULT_SUGGESTIONS);
     const [isSuggesting, setIsSuggesting] = useState(false);
-    const [category, setCategory] = useState<(typeof QUESTION_CATEGORIES)[number]>("random");
+    const [category, setCategory] =
+        useState<(typeof QUESTION_CATEGORIES)[number]>("random");
+
+    const router = useRouter();
 
     const form = useForm({
         resolver: zodResolver(messageSchema),
@@ -48,7 +53,7 @@ const SendMessageForm = ({ username, shareToken }: { username: string, shareToke
         try {
             const response = await axios.get("/api/suggest-messages", {
                 params: {
-                    category
+                    category,
                 },
             });
             if (response.data.success) {
@@ -72,14 +77,21 @@ const SendMessageForm = ({ username, shareToken }: { username: string, shareToke
     const onSubmit = async (data: z.infer<typeof messageSchema>) => {
         setIsSending(true);
         try {
-            await axios.post("/api/send-message", {
+            const response = await axios.post("/api/send-message", {
                 content: data.content,
                 shareToken: receivingUserShareToken,
             });
+
+            const conversationToken = response.data.conversationToken;
+
+            localStorage.setItem(
+                `conv_${receivingUserShareToken}`,
+                conversationToken,
+            );
+
             toast.success("Message Sent Successfully");
-            form.reset({
-                content: "",
-            });
+
+            router.replace(`/c/${conversationToken}`);
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 toast.error("Failed to send message", {
@@ -95,11 +107,14 @@ const SendMessageForm = ({ username, shareToken }: { username: string, shareToke
     };
 
     return (
-    <div className="flex items-center justify-center gap-10 h-[85vh] w-full px-8">
-        <Card className="flex flex-col items-center justify-between p-10 h-[90%] w-full max-w-4xl lg:w-[45%] bg-gray-100 shadow-xl">
+    <div className="flex h-[85vh] w-full items-center justify-center gap-10 px-8">
+        <Card className="flex h-[90%] w-full max-w-4xl flex-col items-center justify-between bg-gray-100 p-10 shadow-xl dark:bg-zinc-900 dark:border-zinc-800 lg:w-[45%]">
             <div className="h-1/4">
-                <p className="text-3xl">Send Your Message to</p>
-                <h1 className="text-5xl font-bold bg-linear-to-r from-black via-gray-500 to-black bg-clip-text text-transparent">
+                <p className="text-3xl text-zinc-900 dark:text-zinc-100">
+                    Send Your Message to
+                </p>
+
+                <h1 className="bg-linear-to-r from-black via-gray-500 to-black bg-clip-text text-5xl font-bold text-transparent dark:from-white dark:via-zinc-300 dark:to-white">
                     {receivingUser}
                 </h1>
             </div>
@@ -107,7 +122,7 @@ const SendMessageForm = ({ username, shareToken }: { username: string, shareToke
             <div className="h-3/4 w-full">
                 <form
                     onSubmit={form.handleSubmit(onSubmit)}
-                    className="flex flex-col items-start justify-start h-full space-y-6"
+                    className="flex h-full flex-col items-start justify-start space-y-6"
                 >
                     <Controller
                         name="content"
@@ -119,7 +134,7 @@ const SendMessageForm = ({ username, shareToken }: { username: string, shareToke
                             >
                                 <FieldLabel
                                     htmlFor="messageBox"
-                                    className="text-2xl"
+                                    className="text-2xl text-zinc-900 dark:text-zinc-100"
                                 >
                                     Enter your message below
                                 </FieldLabel>
@@ -127,7 +142,7 @@ const SendMessageForm = ({ username, shareToken }: { username: string, shareToke
                                 <Textarea
                                     {...field}
                                     id="messageBox"
-                                    className="bg-amber-100 w-full h-[90%] text-lg"
+                                    className="h-[90%] w-full bg-amber-100 text-lg text-zinc-900 placeholder:text-zinc-500 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-50 dark:placeholder:text-amber-200/40"
                                     aria-invalid={fieldState.invalid}
                                     placeholder="max 300 characters"
                                 />
@@ -156,22 +171,23 @@ const SendMessageForm = ({ username, shareToken }: { username: string, shareToke
         </Card>
 
         {/* Suggest messages */}
-        <div className="flex flex-col gap-4 w-full max-w-sm">
-            <div className="flex gap-3 items-center">
+        <div className="flex w-full max-w-sm flex-col gap-4">
+            <div className="flex items-center gap-3">
                 <select
                     value={category}
                     onChange={(e) =>
                         setCategory(
-                            e.target.value as (typeof QUESTION_CATEGORIES)[number]
+                            e.target.value as (typeof QUESTION_CATEGORIES)[number],
                         )
                     }
                     disabled={isSuggesting || isSending}
-                    className="h-10 rounded-md border bg-background px-3 text-sm font-medium cursor-pointer transition-colors hover:bg-accent focus:outline-none"
+                    className="h-10 cursor-pointer rounded-md border bg-background px-3 text-sm font-medium transition-colors hover:bg-accent focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
                 >
                     {QUESTION_CATEGORIES.map((categoryOption) => (
                         <option
                             key={categoryOption}
                             value={categoryOption}
+                            className="dark:bg-zinc-900 dark:text-zinc-100"
                         >
                             {categoryOption.charAt(0).toUpperCase() +
                                 categoryOption.slice(1)}
@@ -183,7 +199,7 @@ const SendMessageForm = ({ username, shareToken }: { username: string, shareToke
                     type="button"
                     onClick={suggestMessages}
                     disabled={isSuggesting || isSending}
-                    className="flex-1 cursor-pointer border transition-all duration-500 hover:border-violet-400 hover:shadow-lg hover:-translate-y-1 hover:bg-linear-to-r hover:from-violet-500 hover:via-cyan-500 hover:to-blue-500"
+                    className="flex-1 cursor-pointer border transition-all duration-500 hover:-translate-y-1 hover:border-violet-400 hover:bg-linear-to-r hover:from-violet-500 hover:via-cyan-500 hover:to-blue-500 hover:shadow-lg"
                 >
                     {isSuggesting ? (
                         <>
@@ -199,8 +215,8 @@ const SendMessageForm = ({ username, shareToken }: { username: string, shareToke
                 </Button>
             </div>
 
-            <Card className="p-4 space-y-3 shadow-md">
-                <h2 className="font-semibold text-lg">
+            <Card className="space-y-3 bg-white p-4 shadow-md dark:border-zinc-800 dark:bg-zinc-900">
+                <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
                     AI Suggestions
                 </h2>
 
@@ -214,7 +230,7 @@ const SendMessageForm = ({ username, shareToken }: { username: string, shareToke
                                 shouldDirty: true,
                             })
                         }
-                        className="w-full rounded-md border p-3 text-left cursor-pointer transition-all duration-300 hover:bg-muted hover:shadow-md hover:-translate-y-1"
+                        className="w-full cursor-pointer rounded-md border bg-white p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:bg-muted hover:shadow-md dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
                     >
                         {suggestion}
                     </button>

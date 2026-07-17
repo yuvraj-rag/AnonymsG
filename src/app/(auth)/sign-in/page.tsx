@@ -4,11 +4,7 @@ import { useForm, Controller } from "react-hook-form";
 import * as z from "zod";
 import { toast } from "sonner"; //from shadcn
 import { useRouter } from "next/navigation";
-import {
-    Field,
-    FieldLabel,
-    FieldError,
-} from "@/components/ui/field";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -31,7 +27,6 @@ const page = () => {
             password: "",
         },
     });
-
 
     const onSubmit = async (data: z.infer<typeof signInSchema>) => {
         setIsSubmitting(true);
@@ -74,16 +69,20 @@ const page = () => {
         }
 
         setIsSubmitting(false);
-    };;
+    };
 
     return (
-        <div className="flex flex-col justify-center items-center min-h-[90vh] bg-gray-100">
-            <div className="h-[60vh] w-full max-w-md mb-20 p-8 space-y-8 bg-white rounded-lg shadow-md">
+        <div className="flex flex-col justify-center items-center min-h-[90vh] bg-gray-100 dark:bg-background">
+            <div className="h-[60vh] w-full max-w-md mb-20 p-8 space-y-8 bg-white dark:bg-card rounded-lg shadow-md border dark:border-border">
                 <div className="flex flex-col justify-evenly h-full text-center">
-                    <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-6">
+                    <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-6 text-foreground">
                         Sign In
                     </h1>
-                    <p className="text-2xl mb-6">Lets start your journey</p>
+
+                    <p className="text-2xl mb-6 text-foreground">
+                        Lets start your journey
+                    </p>
+
                     <form
                         onSubmit={form.handleSubmit(onSubmit)}
                         className="space-y-6"
@@ -96,17 +95,19 @@ const page = () => {
                                     <FieldLabel htmlFor="identifierInput">
                                         Email or Username
                                     </FieldLabel>
+
                                     <Input
                                         {...field}
                                         id="identifierInput"
                                         onChange={(e) => {
                                             field.onChange(e);
-                                            setUsername(e.target.value); //because we manage separately also
+                                            setUsername(e.target.value);
                                         }}
                                         aria-invalid={fieldState.invalid}
                                         placeholder="Email or username"
                                         autoComplete="username"
                                     />
+
                                     {fieldState.invalid && (
                                         <FieldError
                                             errors={[fieldState.error]}
@@ -115,6 +116,7 @@ const page = () => {
                                 </Field>
                             )}
                         />
+
                         <Controller
                             name="password"
                             control={form.control}
@@ -123,6 +125,7 @@ const page = () => {
                                     <FieldLabel htmlFor="passwordInput">
                                         Password
                                     </FieldLabel>
+
                                     <Input
                                         id="passwordInput"
                                         {...field}
@@ -131,6 +134,7 @@ const page = () => {
                                         placeholder="password"
                                         autoComplete="new-password"
                                     />
+
                                     {fieldState.invalid && (
                                         <FieldError
                                             errors={[fieldState.error]}
@@ -139,11 +143,13 @@ const page = () => {
                                 </Field>
                             )}
                         />
+
                         {form.formState.errors.root && (
                             <p className="text-sm text-destructive">
                                 {form.formState.errors.root.message}
                             </p>
                         )}
+
                         <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? (
                                 <>
@@ -155,11 +161,12 @@ const page = () => {
                             )}
                         </Button>
                     </form>
-                    <p className="text-sm text-purple-500 mt-4">
+
+                    <p className="text-sm text-purple-500 dark:text-purple-400 mt-4">
                         New user?{" "}
                         <Link
                             href="/sign-up"
-                            className="underline font-medium hover:text-purple-700 transition"
+                            className="underline font-medium hover:text-purple-700 dark:hover:text-purple-300 transition"
                         >
                             Sign-Up here
                         </Link>

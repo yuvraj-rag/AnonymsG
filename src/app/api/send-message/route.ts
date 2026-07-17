@@ -1,6 +1,7 @@
+import { generateToken } from "@/helpers/generateToken";
 import dbConnect from "@/lib/dbConnect";
+import { ConversationModel } from "@/model/Conversation";
 import { UserModel } from "@/model/User";
-import { Message } from "@/model/User";
 
 export async function POST(request: Request) {
     await dbConnect();
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
             )
         }
 
-        //if user is accepting msgs
+        //if user is not accepting msgs
         if(!user.isAcceptingMessages) {
             return Response.json(
                 {
@@ -29,25 +30,38 @@ export async function POST(request: Request) {
                 { status:403}
             )
         }
-        // we need to assert that this is of type Message in order to push it
-        const newMessage: Message = {content, createdAt: new Date()} as Message
-        user.messages.push(newMessage);
-        await user.save();
+
+        const newConversation = new ConversationModel({
+            recipientId: user._id,
+            conversationToken: generateToken(),
+            messages: [
+                {
+                    role: "sender",
+                    content,
+                    createdAt: new Date(),
+                },
+            ],
+            recipientHasUnread: true,
+            senderHasUnread: false,
+        });
+
+        await newConversation.save();
 
         return Response.json(
             {
                 success:true,
-                message: "Message sent successfully"
+                message: "Message sent successfully.",
+                conversationToken: newConversation.conversationToken
             },
             {status: 200}
         )
 
     } catch (error) {
-        console.log("Unexpected error while adding msgs: ",error);
+        console.error("Unexpected error while sending msgs: ",error);
         return Response.json(
             {
                 success: false,
-                message: "Unexpected Error Occured while adding messages"
+                message: "Unexpected Error Occured while sending message"
             },
             {status: 500}
         )

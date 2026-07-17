@@ -33,7 +33,7 @@ const messages = [
 
 const FeatureSection = () => {
     return (
-        <section className="relative overflow-hidden py-28">
+        <section className="relative overflow-hidden pt-28">
             {/* Background */}
             <div className="absolute inset-0 -z-10">
                 <div className="absolute left-1/2 top-0 h-96 w-96 -translate-x-1/2 rounded-full bg-violet-500/5 blur-3xl" />

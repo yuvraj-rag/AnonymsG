@@ -1,15 +1,20 @@
-'use client'
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, Controller } from "react-hook-form"
+"use client";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, Controller } from "react-hook-form";
 import { useDebounce } from "@uidotdev/usehooks";
-import * as z from "zod"
-import { useEffect, useState } from "react"
+import * as z from "zod";
+import { useEffect, useState } from "react";
 import { toast } from "sonner"; //from shadcn
 import { useRouter } from "next/navigation";
 import { signUpSchema } from "@/schemas/signUpSchema";
-import axios, {AxiosError} from 'axios'
+import axios, { AxiosError } from "axios";
 import { ApiResponse } from "@/types/ApiResponse";
-import { Field, FieldLabel, FieldError, FieldGroup } from "@/components/ui/field";
+import {
+    Field,
+    FieldLabel,
+    FieldError,
+    FieldGroup,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, CircleX, Loader2 } from "lucide-react";
@@ -17,7 +22,9 @@ import { CheckCircle2, CircleX, Loader2 } from "lucide-react";
 const page = () => {
     const [username, setUsername] = useState("");
     const [usernameMessage, setUsernameMessage] = useState("");
-    const [isUsernameAvailable, setIsUsernameAvailable] = useState<boolean | null>(null);
+    const [isUsernameAvailable, setIsUsernameAvailable] = useState<
+        boolean | null
+    >(null);
     const [isCheckingUsername, setIsCheckingUsername] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -36,7 +43,6 @@ const page = () => {
 
     useEffect(() => {
         const checkUsernameUnique = async () => {
-
             if (debouncedUsername.trim()) {
                 setIsCheckingUsername(true);
                 setUsernameMessage("");
@@ -45,12 +51,12 @@ const page = () => {
                     // const response = await axios.get(
                     //     `/api/check-unique-user?username=${encodeURIComponent(debouncedUsername)}`,
                     // );
-                    //Better way : 
+                    //Better way :
                     const response = await axios.get("/api/check-unique-user", {
                         params: {
-                            username: debouncedUsername.trim()
-                        }
-                    })
+                            username: debouncedUsername.trim(),
+                        },
+                    });
                     // console.log("Axios response : ", response); // #INFO
                     setIsUsernameAvailable(true);
                     setUsernameMessage(response.data.message);
@@ -76,7 +82,7 @@ const page = () => {
         setIsSubmitting(true);
         try {
             const response = await axios.post("/api/sign-up", data);
-            toast.success("Success", { description: response.data.message});
+            toast.success("Success", { description: response.data.message });
             router.replace(`/verify/${username}`);
         } catch (error) {
             console.error("Error in signing up user", error);
@@ -89,17 +95,18 @@ const page = () => {
     };
 
     return (
-        <div className="flex flex-col justify-center items-center min-h-[90vh] bg-gray-100">
-            <div className="flex flex-col justify-between w-full max-w-md p-8 space-y-10 bg-white rounded-lg shadow-md">
+        <div className="flex flex-col justify-center items-center min-h-[90vh] bg-background">
+            <div className="flex flex-col justify-between w-full max-w-md p-8 space-y-10 bg-card text-card-foreground border rounded-lg shadow-md">
                 <div>
                     <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl pb-10">
                         Join AnonymsG
                     </h1>
-                    
-                    <p className="pb-5 mb-5">
+
+                    <p className="pb-5 mb-5 text-muted-foreground">
                         Sign up to start your anonymous adventure
                     </p>
                 </div>
+
                 <div className="text-center">
                     <form
                         onSubmit={form.handleSubmit(onSubmit)}
@@ -126,16 +133,16 @@ const page = () => {
                                             placeholder="Enter a unique username"
                                             autoComplete="username"
                                             className={`
-                        pr-10
-                        transition-all duration-200
-                        ${
-                            username
-                                ? isUsernameAvailable
-                                    ? "border-green-500 focus-visible:ring-green-500/30"
-                                    : "border-red-500 focus-visible:ring-red-500/30"
-                                : ""
-                        }
-                    `}
+                                            pr-10
+                                            transition-all duration-200
+                                            ${
+                                                username
+                                                    ? isUsernameAvailable
+                                                        ? "border-green-500 focus-visible:ring-green-500/30"
+                                                        : "border-red-500 focus-visible:ring-red-500/30"
+                                                    : ""
+                                            }
+                                        `}
                                         />
 
                                         {isCheckingUsername && (
@@ -147,8 +154,8 @@ const page = () => {
                                                 <div
                                                     className={`absolute left-0 top-full mt-1 flex items-center gap-1 text-xs ${
                                                         isUsernameAvailable
-                                                            ? "text-green-600"
-                                                            : "text-red-600"
+                                                            ? "text-green-600 dark:text-green-400"
+                                                            : "text-red-600 dark:text-red-400"
                                                     }`}
                                                 >
                                                     {isUsernameAvailable ? (
@@ -172,6 +179,7 @@ const page = () => {
                                 </Field>
                             )}
                         />
+
                         <Controller
                             name="email"
                             control={form.control}
@@ -180,6 +188,7 @@ const page = () => {
                                     <FieldLabel htmlFor="emailInput">
                                         E-mail
                                     </FieldLabel>
+
                                     <Input
                                         id="emailInput"
                                         {...field}
@@ -187,6 +196,7 @@ const page = () => {
                                         placeholder="E-mail"
                                         autoComplete="email"
                                     />
+
                                     {fieldState.invalid && (
                                         <FieldError
                                             errors={[fieldState.error]}
@@ -195,6 +205,7 @@ const page = () => {
                                 </Field>
                             )}
                         />
+
                         <Controller
                             name="password"
                             control={form.control}
@@ -203,6 +214,7 @@ const page = () => {
                                     <FieldLabel htmlFor="passwordInput">
                                         Password
                                     </FieldLabel>
+
                                     <Input
                                         id="passwordInput"
                                         {...field}
@@ -211,6 +223,7 @@ const page = () => {
                                         placeholder="Password"
                                         autoComplete="new-password"
                                     />
+
                                     {fieldState.invalid && (
                                         <FieldError
                                             errors={[fieldState.error]}
@@ -219,6 +232,7 @@ const page = () => {
                                 </Field>
                             )}
                         />
+
                         <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? (
                                 <>
@@ -234,6 +248,6 @@ const page = () => {
             </div>
         </div>
     );
-}
+};
 
-export default page
+export default page;

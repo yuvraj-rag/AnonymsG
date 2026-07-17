@@ -1,7 +1,7 @@
 import dbConnect from "@/lib/dbConnect";
 import { UserModel } from "@/model/User";
 import { VerificationTokenModel } from "@/model/VerificationToken";
-import { generateShareToken } from "@/helpers/generateShareToken";
+import { generateToken } from "@/helpers/generateToken";
 
 export async function POST(request: Request) {
     await dbConnect();
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
                 );
             }
 
-            const shareToken = generateShareToken();
+            const shareToken = generateToken();
 
             const newUser = new UserModel({
                 username: pendingUser.username,

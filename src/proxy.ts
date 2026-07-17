@@ -1,26 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server'
-export {default} from "next-auth/middleware"
-import { getToken } from "next-auth/jwt"
- 
+import { NextRequest, NextResponse } from "next/server";
+export { default } from "next-auth/middleware";
+import { getToken } from "next-auth/jwt";
+
 // This function can be marked `async` if using `await` inside
 export async function proxy(request: NextRequest) {
-  const token = await getToken({req: request})
-  const url = request.nextUrl
+    const token = await getToken({ req: request });
+    const url = request.nextUrl;
 
-    if(token && (url.pathname === '/') )
-    {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+    if (token && (url.pathname === "/" || 
+                  url.pathname === "/sign-in")
+        ) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
     }
-
 }
- 
+
 // All paths where middleware should run
 export const config = {
-  matcher: [
-    '/sign-in',
-    '/sign-up',
-    '/',
-    '/dashboard/:path*',
-    '/verify/:path*'
-]
-}
+    matcher: [
+        "/sign-in",
+        "/sign-up",
+        "/",
+        "/dashboard/:path*",
+        "/verify/:path*",
+    ],
+};
