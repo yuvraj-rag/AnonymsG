@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface Message {
     role: "sender" | "recipient";
@@ -27,7 +27,7 @@ export interface Conversation extends Document {
     recipientId: mongoose.Types.ObjectId;
     conversationToken: string;
     status: "open" | "closed";
-    messages: Message[]
+    messages: Types.DocumentArray<Message>;
     recipientHasUnread: boolean;
     senderHasUnread: boolean;
     lastActivityAt: Date;

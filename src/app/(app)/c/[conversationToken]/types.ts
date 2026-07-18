@@ -1,9 +1,9 @@
 
 export type ThreadMessage = {
     _id: string;
-        role: "sender" | "recipient";
-        content: string;
-        createdAt: Date;
+    role: "sender" | "recipient";
+    content: string;
+    createdAt: Date;
 }
 
 export type ThreadConversation = {

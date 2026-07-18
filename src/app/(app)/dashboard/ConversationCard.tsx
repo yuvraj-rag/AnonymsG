@@ -1,3 +1,5 @@
+"use client";
+
 import {
     Card,
     CardContent,
@@ -6,7 +8,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ConversationSummary } from "./page";
+import { ConversationSummary } from "./DashboardClient";
 
 type ConversationCardProps = {
     conversation: ConversationSummary;
