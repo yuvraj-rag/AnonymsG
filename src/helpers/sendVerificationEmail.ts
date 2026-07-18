@@ -1,11 +1,11 @@
-import Mailjet from "node-mailjet";
+import { MailerSend, EmailParams, Sender, Recipient } from "mailersend";
 import { render } from "@react-email/render";
 import VerificationEmail from "../../emails/VerificationEmail";
 
-const mailjet = Mailjet.apiConnect(
-    process.env.MJ_API_KEY!,
-    process.env.MJ_SECRET_KEY!
-);
+
+const mailerSend = new MailerSend({
+    apiKey: process.env.MAILERSEND_API_KEY!,
+});
 
 
 export async function sendVerificationEmail(
@@ -24,34 +24,36 @@ export async function sendVerificationEmail(
         );
 
 
-        const emailResponse = await mailjet
-            .post("send", { version: "v3.1" })
-            .request({
-                Messages: [
-                    {
-                        From: {
-                            Email: "academicstudywork@gmail.com",   
-                            Name: "AnonymsG",
-                        },
-                        To: [
-                            {
-                                Email: email,
-                            },
-                        ],
+        const sentFrom = new Sender(
+            "noreply@test-69oxl5ekzkkl785k.mlsender.net",
+            "AnonymsG"
+        );
 
-                        Subject: "AnonymsG | Verification Code",
-                        HTMLPart: html,
-                    },
-                ],
-            });
 
-        console.log("verification email sent?", emailResponse);
+        const recipients = [
+            new Recipient(email, username),
+        ];
+
+
+        const emailParams = new EmailParams()
+            .setFrom(sentFrom)
+            .setTo(recipients)
+            .setSubject("AnonymsG | Verification Code")
+            .setHtml(html);
+
+
+        const response = await mailerSend.email.send(emailParams);
+
+
+        console.log("verification email sent?", response);
+
         return {
             success: true,
             message: "Verification Email sent successfully",
         };
 
     } catch (emailError) {
+
         console.error(
             "Error sending verification email",
             emailError
