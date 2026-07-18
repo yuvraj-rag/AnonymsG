@@ -1,36 +1,186 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AnonymsG
 
-## Getting Started
+Anonymous messaging platform built with Next.js, TypeScript, MongoDB, and modern web technologies. It allows users to receive anonymous messages through shareable links. Users can manage conversations, reply anonymously, and continue discussions through private conversation threads.
 
-First, run the development server:
+## Preview
+
+### Landing Page
+
+![Landing Page](./screenshots/landing.png)
+
+### Dashboard
+
+![Dashboard](./screenshots/dashboard.png)
+
+### Conversation Thread
+
+![Conversation Thread](./screenshots/conversation.png)
+
+Live Demo: [Deploy Link]
+
+---
+
+## Features
+
+- Create a profile and receive anonymous messages from people after sharing a link
+- Continue past conversations through private conversation links
+- Reply to recieved messages through conversation threads
+- Manage conversations (close, delete, and control message settings)
+- Ability to toggle message acceptance status for receivers
+- Send anonymous messages without making any accounts
+- AI-assisted message suggestions to help senders start conversations
+
+---
+
+## Tech Stack
+
+### Frontend
+
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Shadcn
+- React
+
+### Backend
+
+- Next.js API Routes
+- MongoDB
+
+### Authentication & Validation
+
+- NextAuth.js
+- Zod
+- bcrypt
+
+### Other Tools
+
+- Vercel (Deployment)
+- MailerSend (Email Verification)
+- Google Gemini API (AI based suggestions)
+
+---
+
+# How It Works
+
+1. User creates an account and verifies their identity.
+2. Each user receives a unique shareable link.
+3. Visitors send anonymous messages by visiting the shared link (no account).
+4. Messages are stored and displayed in the user's dashboard.
+5. Replies convert message interactions into private conversation threads.
+6. Senders and receivers can continue conversations through conversation links.
+
+---
+
+# Architecture Overview
+
+The application follows a full-stack Next.js architecture:
+
+- Client components handle interactive UI and user interactions.
+- Server-side routes manage authentication, messaging, and database operations.
+- MongoDB stores users, conversations, and verification data.
+- Authentication sessions protect user-specific resources.
+
+---
+
+# Database Design
+
+## User
+
+Stores:
+
+- Authentication information
+- User profile details
+- Message receiving preferences
+
+## Conversation
+
+Stores:
+
+- Sender and receiver relationship
+- Conversation status (open|close)
+- Message threads
+- Activity timestamps
+
+## VerificationToken
+
+Stores:
+
+- User information
+- Email verification code
+- Token expiry date
+
+---
+
+# Security & Design Decisions
+
+- Passwords are securely hashed before storage.
+- Protected routes use authentication-based access control.
+- Input validation is handled using Zod schemas.
+- Conversation access uses generated tokens instead of exposing sender identities.
+- Sender metadata such as IP address or device information is never stored.
+
+---
+
+# Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/yuvraj-rag/AnonymsG.git
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open browser and visit:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+[http://localhost:3000]
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+# Environment Variables
 
-To learn more about Next.js, take a look at the following resources:
+Create a `.env.local` file:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+DATABASE_URL=
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+NEXTAUTH_SECRET=
 
-## Deploy on Vercel
+NEXTAUTH_URL=
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+EMAIL_API_KEY=
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+# Deployment
+
+Deployed using:
+
+- Vercel
+
+Live URL:
+
+[Deploy Link]
+
+---
+
+# Future Improvements
+
+- Real-time messaging using Server Side Events (Currently polling based)
+- Push notifications via Email
+- Improved conversation UI and Images support
+- Rate limiting
